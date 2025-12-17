@@ -1,14 +1,13 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+pub mod config;
+pub mod error;
+pub mod types;
+pub mod storage;
+pub mod distance;
+pub mod quantization;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub use config::{Config, DistanceMetric};
+pub use error::{KhadyotaError, Result};
+pub use types::{SearchResult, VectorEntry};
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+// Re-export for convenience
+pub use storage::Serializer;
