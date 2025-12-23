@@ -4,6 +4,7 @@ use crate::indexing::IVFIndex;
 use crate::quantization::PQCodec;
 use crate::storage::QuantizedVectors;
 use crate::types::SearchResult;
+use rayon::prelude::*;
 use std::collections::HashMap;
 use std::path::Path;
 
@@ -247,6 +248,55 @@ impl VectorDB {
     
     pub fn is_empty(&self) -> bool {
         self.vectors.is_empty()
+    }
+
+    /// Batch search multiple queries in parallel
+    pub fn batch_search(&self, queries: &[Vec<f32>], k: usize) -> Result<Vec<Vec<SearchResult>>> {
+        if !self.index_built {
+            return Err(crate::error::KhadyotaError::IndexNotBuilt);
+        }
+        
+        queries
+            .par_iter()
+            .map(|query| self.search(query, k))
+            .collect()
+    }
+    
+    /// Parallel candidate scoring for large result sets
+    fn search_with_index_parallel(
+        &self,
+        query: &[f32],
+        k: usize,
+        ivf: &IVFIndex,
+        quantized: &QuantizedVectors,
+    ) -> Result<Vec<SearchResult>> {
+        // Probe IVF
+        let clusters = ivf.probe(query);
+        let candidates = ivf.get_candidates(&clusters);
+        
+        // Precompute distance table
+        let dist_table = quantized.precompute_distance_table(query);
+        
+        // Parallel distance computation
+        let mut scored: Vec<(u32, f32)> = candidates
+            .par_iter()
+            .map(|&vec_id| {
+                let distance = quantized.table_lookup_distance(&dist_table, vec_id);
+                (vec_id, distance)
+            })
+            .collect();
+        
+        scored.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+        scored.truncate(k);
+        
+        Ok(scored
+            .into_iter()
+            .map(|(id, distance)| SearchResult {
+                id,
+                distance,
+                metadata: self.metadata.get(&id).cloned(),
+            })
+            .collect())
     }
 }
 
