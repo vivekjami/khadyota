@@ -9,8 +9,8 @@ impl Serializer {
     /// Serialize data to a file
     pub fn save<T: serde::Serialize>(data: &T, path: &Path) -> Result<()> {
         let file = File::create(path)?;
-        let writer = BufWriter::new(file);
-        bincode::serialize_into(writer, data)?;
+        let mut writer = BufWriter::new(file);
+        rmp_serde::encode::write(&mut writer, data)?;
         Ok(())
     }
     
@@ -18,8 +18,8 @@ impl Serializer {
     pub fn load<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T> {
         let file = File::open(path)?;
         let reader = BufReader::new(file);
-        let data = bincode::deserialize_from(reader)?;
-        Ok(data)
+        let deserialized = rmp_serde::from_read(reader)?;
+        Ok(deserialized)
     }
     
     /// Save vectors in efficient binary format

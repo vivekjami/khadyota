@@ -17,8 +17,11 @@ pub enum KhadyotaError {
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
     
-    #[error("Bincode error: {0}")]
-    BincodeError(#[from] bincode::Error),
+    #[error("MessagePack encode error: {0}")]
+    RmpEncodeError(#[from] rmp_serde::encode::Error),
+    
+    #[error("MessagePack decode error: {0}")]
+    RmpDecodeError(#[from] rmp_serde::decode::Error),
     
     #[error("Index not built. Call build_index() first.")]
     IndexNotBuilt,

@@ -1,4 +1,4 @@
-use super::kmeans::{kmeans, KMeansResult};
+use super::kmeans::kmeans;
 
 /// A codebook is a set of learned centroids for quantization
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]

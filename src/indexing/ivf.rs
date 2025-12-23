@@ -1,5 +1,5 @@
 use crate::distance::metrics::euclidean_distance;
-use crate::quantization::kmeans::{kmeans, KMeansResult};
+use crate::quantization::kmeans::kmeans;
 use serde::{Deserialize, Serialize};
 
 /// Inverted File Index for fast approximate search
